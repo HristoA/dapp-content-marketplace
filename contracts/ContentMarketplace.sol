@@ -73,16 +73,21 @@ contract ContentMarketplace{
         }
     }
 
+    function checkOrderPaidStatus(bytes32 orderIPFSHash) view public isOrderOwner(orderIPFSHash) returns(bool){
+        return Orders[orderIPFSHash].isPaid;
+    }
+
     function getOrderWorkResult(bytes32 orderIPFSHash) view public isOrderOwner(orderIPFSHash) returns(bytes32){
         return Orders[orderIPFSHash].workIPFSHash;
     }
 
     //Mark as done and force contract to pay for it
     function markOrderAsVerify(bytes32 orderIPFSHash) public isOrderOwner(orderIPFSHash) {
-        assert(Orders[orderIPFSHash].price <= this.balance);
+        require(Orders[orderIPFSHash].isPaid == false);
+        require(Orders[orderIPFSHash].price <= this.balance);
 
         //Check if work has been done already or owner just close it and want him money back
-        if(checkOrderStatus(orderIPFSHash)){
+        if(checkOrderStatus(orderIPFSHash) == false){
             msg.sender.transfer( Orders[orderIPFSHash].price );
 
             //Delete from this list also if he just want to get money back and cancel order
@@ -98,7 +103,7 @@ contract ContentMarketplace{
         Orders[orderIPFSHash].isPaid = true;
 
         //Delete finished jobs from list
-        for (uint x = 0; i < buyersOrderList[msg.sender].length; x += 1) {
+        for (uint x = 0; x < buyersOrderList[msg.sender].length; x += 1) {
             if (orderIPFSHash == buyersOrderList[msg.sender][x]) {
                 delete buyersOrderList[msg.sender][x];
             }

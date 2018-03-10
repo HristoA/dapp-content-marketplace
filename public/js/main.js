@@ -126,6 +126,25 @@
                 "type": "function"
             },
             {
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "orderIPFSHash",
+                        "type": "bytes32"
+                    }
+                ],
+                "name": "checkOrderPaidStatus",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
                 "constant": false,
                 "inputs": [
                     {
@@ -267,7 +286,7 @@
             }
         ])
 
-        $this.ContractInstance = ContentMarketplace.at("0x3b8a65c5e784e8422d3670d859ba348f11fde1af")
+        $this.ContractInstance = ContentMarketplace.at("0xeb2b17aad1a4465561c6bfbc081b3c77e491d0df")
 
         $this.ContractInstance.getBalanceOfContract(function(error, result){
             if(!error)
@@ -375,11 +394,13 @@
         }
     });
 
-    $("#takeOrder").on("click", function(e){
+    $(".takeOrder").on("click", function(e){
         e.preventDefault();
         $("#dapp-main-conteiner").addClass("blur-on-load");
 
-        var hash =  $("#takeOrder").attr("data-hash")
+        var elementThis = $(this);
+
+        var hash = elementThis.closest(".orderList").attr("data-hash")
 
         $this.ContractInstance.takeOrder(hash, {
             gas: 300000,
@@ -464,11 +485,18 @@
                             elementThis.closest("div").html( data.work );
                             console.log(elementThis)
                             console.log(result);
+
+                            $("#dapp-main-conteiner").removeClass("blur-on-load");
+                        },
+                        error: function(){
+                            $("#dapp-main-conteiner").removeClass("blur-on-load");
                         }
                     });
+                } else {
+                    elementThis.closest("div").html("There are no submit work yet");
+                    $("#dapp-main-conteiner").removeClass("blur-on-load");
                 }
-
-                elementThis.closest("div").html("There are no submit work yet");
+                
                 console.log(elementThis)
                 console.log(result);
 
@@ -476,8 +504,6 @@
                 $("#message").html("Ethereum error: " + err).show();
                 setTimeout(removeMessage(), 4000)
             }
-
-            $("#dapp-main-conteiner").removeClass("blur-on-load");
         })
     })
 
@@ -506,6 +532,47 @@
         })
     })
 
+
+    /***************
+     * SUBMIT WOKR *
+     ***************/
+    $(".submitWork").on("click", function(e){
+        $("#dapp-main-conteiner").addClass("blur-on-load");
+
+        var elementThis = $(this);
+        var orderHash   = elementThis.closest(".takenOrderList").attr("data-hash")
+
+        console.log("Order Hash: " + orderHash);
+
+        var workText = elementThis.closest(".takenOrderList").find("#orderWork").val();
+        console.log(workText);
+
+        $.ajax({
+            url: "/submit-work",
+            type: "POST",
+            contentType: 'application/json',
+            data: JSON.stringify({"workText": workText, "orderHash": orderHash}),
+            success: function (data) {
+                console.log( data.workHash );
+
+                $this.ContractInstance.submitWork(orderHash, data.workByte32Hash, function (err, result) {
+                    console.log(err, result);
+
+                    if (err == null) {
+                        $("#message").html("Thanks for compleate the work!").addClass("text-success").show();
+
+
+                        $("div").find("[data-hash='" + orderHash + "']").hide();
+                    } else {
+                        $("#message").html("Ethereum error: " + err).show();
+                        setTimeout(removeMessage(), 4000)
+                    }
+
+                    $("#dapp-main-conteiner").removeClass("blur-on-load");
+                })
+            }
+        });
+    })
 
     /**************
      * NAVIGATION *

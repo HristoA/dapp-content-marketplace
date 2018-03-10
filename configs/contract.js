@@ -91,6 +91,25 @@ function getABI() {
             "type": "function"
         },
         {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "orderIPFSHash",
+                    "type": "bytes32"
+                }
+            ],
+            "name": "checkOrderPaidStatus",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
             "constant": false,
             "inputs": [
                 {
@@ -234,7 +253,7 @@ function getABI() {
 }
 
 function getAddress() {
-    return "0x3b8a65c5e784e8422d3670d859ba348f11fde1af";
+    return "0xeb2b17aad1a4465561c6bfbc081b3c77e491d0df";
 }
 
 function getOwner() {
