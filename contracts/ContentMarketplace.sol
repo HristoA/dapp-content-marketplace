@@ -54,15 +54,15 @@ contract ContentMarketplace{
     function makeOrder(bytes32  orderIPFSHash) public payable{
         Orders[orderIPFSHash].orderOwner = msg.sender;
         Orders[orderIPFSHash].price      = msg.value;
-        buyersOrderList[msg.sender]      = [orderIPFSHash];
 
+        buyersOrderList[msg.sender].push(orderIPFSHash);
         freeOrderList.push(orderIPFSHash);
         OrderCreated(msg.sender, orderIPFSHash);
     }
 
     // Work that content writer do right now
-    function getBuyerOrderList() view public returns(bytes32[]){
-        return  buyersOrderList[msg.sender];
+    function getBuyerOrderList(address buyerAddress) view public returns(bytes32[]){
+        return  buyersOrderList[buyerAddress];
     }
 
     function checkOrderStatus(bytes32 orderIPFSHash) view public isOrderOwner(orderIPFSHash) returns(bool){
@@ -80,13 +80,27 @@ contract ContentMarketplace{
     //Mark as done and force contract to pay for it
     function markOrderAsVerify(bytes32 orderIPFSHash) public isOrderOwner(orderIPFSHash) {
         assert(Orders[orderIPFSHash].price <= this.balance);
-        Orders[orderIPFSHash].writerAddr.transfer( Orders[orderIPFSHash].price );
+
+        //Check if work has been done already or owner just close it and want him money back
+        if(checkOrderStatus(orderIPFSHash)){
+            msg.sender.transfer( Orders[orderIPFSHash].price );
+
+            //Delete from this list also if he just want to get money back and cancel order
+            for (uint i = 0; i < freeOrderList.length; i += 1) {
+                if (orderIPFSHash == freeOrderList[i]) {
+                    delete freeOrderList[i];
+                }
+            }
+        } else {
+            Orders[orderIPFSHash].writerAddr.transfer( Orders[orderIPFSHash].price );
+        }
+
         Orders[orderIPFSHash].isPaid = true;
 
         //Delete finished jobs from list
-        for (uint i = 0; i < buyersOrderList[msg.sender].length; i += 1) {
-            if (orderIPFSHash == buyersOrderList[msg.sender][i]) {
-                delete buyersOrderList[msg.sender][i];
+        for (uint x = 0; i < buyersOrderList[msg.sender].length; x += 1) {
+            if (orderIPFSHash == buyersOrderList[msg.sender][x]) {
+                delete buyersOrderList[msg.sender][x];
             }
         }
     }
@@ -94,21 +108,27 @@ contract ContentMarketplace{
     /**
      * Content Writers
      */
-    function takeOrder(bytes32 orderIPFSHash) public isOpenForApply(orderIPFSHash){
-        Orders[orderIPFSHash].writerAddr = msg.sender;
-        contentWriterJobList[msg.sender] = [orderIPFSHash];
+    function takeOrder(bytes32 orderIPFSHash) public isOpenForApply(orderIPFSHash) returns(bool){
+        //Check if is still available
+        if(checkOrderStatus(orderIPFSHash) == false){
+            Orders[orderIPFSHash].writerAddr = msg.sender;
+            contentWriterJobList[msg.sender].push(orderIPFSHash);
 
-        //Delete taken element from list
-        for (uint i = 0; i < freeOrderList.length; i += 1) {
-            if (orderIPFSHash == freeOrderList[i]) {
-                delete freeOrderList[i];
+            //Delete taken element from list
+            for (uint i = 0; i < freeOrderList.length; i += 1) {
+                if (orderIPFSHash == freeOrderList[i]) {
+                    delete freeOrderList[i];
+                }
             }
+            return true;
+        } else {
+            return false;
         }
     }
 
     // Work that content writer do right now
-    function getContentWriterJobList() view public returns(bytes32[]){
-        return  contentWriterJobList[msg.sender];
+    function getContentWriterJobList(address contentWriterAddr) view public returns(bytes32[]){
+        return  contentWriterJobList[contentWriterAddr];
     }
 
     function submitWork(bytes32 orderIPFSHash, bytes32 workIPFSHash) public isOrderWriterOwner(orderIPFSHash){
@@ -120,6 +140,10 @@ contract ContentMarketplace{
                 delete contentWriterJobList[msg.sender][i];
             }
         }
+    }
+
+    function verifyPrice(bytes32 orderIPFSHash) view public returns(uint256){
+        return Orders[orderIPFSHash].price;
     }
 
     function checkWorkStatus(bytes32 orderIPFSHash) view public isOrderWriterOwner(orderIPFSHash) returns(bool){

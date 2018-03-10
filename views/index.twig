@@ -31,7 +31,7 @@
                     <div class="container-contact100-form-btn float-left menu">
                         <div class="wrap-contact100-form-btn">
                             <div class="contact100-form-bgbtn"></div>
-                            <button class="contact100-form-btn" onclick="location.href = '/taken-orders';">
+                            <button class="contact100-form-btn" id="takenOrdersButton">
                                 Taken Orders
                             </button>
                         </div>
@@ -48,7 +48,7 @@
                     <div class="container-contact100-form-btn float-right menu">
                         <div class="wrap-contact100-form-btn">
                             <div class="contact100-form-bgbtn"></div>
-                            <button class="contact100-form-btn" onclick="location.href = '/my-orders';">
+                            <button class="contact100-form-btn" id="myOrdersButton">
                                 My Orders
                             </button>
                         </div>
@@ -61,7 +61,7 @@
             </span>
 
             {% for item in orderList %}
-                <div class="col-md-12 wrap-input100" data-hash="{{ item.byte32Hash }}">
+                <div class="col-md-12 wrap-input100 orderList " data-hash="{{ item.byte32Hash }}">
                     <div class="row wrap-input100">
                         <div class="col-md-1">
                             <span>Price:</span>
@@ -71,10 +71,25 @@
                         </div>
 
                         <div class="col-md-1">
+                            <span>Verify Price:</span>
+                        </div>
+                        <div class="col-md-11">
+                            <a href="#" class="verifyPrice" >Get Price for the work from blockchain</a>
+                        </div>
+
+
+                        <div class="col-md-1">
                             <span>Description:</span>
                         </div>
                         <div class="col-md-11">
                              {{ item.data.description }}
+                        </div>
+
+                        <div class="col-md-1">
+                            <span>Owner:</span>
+                        </div>
+                        <div class="col-md-11">
+                            {{ item.data.owner }}
                         </div>
 
                         <div class="col-md-1">

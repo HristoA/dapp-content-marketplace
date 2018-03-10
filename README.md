@@ -16,16 +16,17 @@ Contract is deployed to Ropsten testnet with Parity
 * General
 
 | METHOD | TYPE | ACCESS |  DESCRIPTION |
-| ------ | ------ | ------ |
+| ------ | ------ | ------ | ------ |
 | getFreeOrdersList | VIEW | ANYONE | List of all orders that can be done from content writers |
 | getBalanceOfContract | VIEW | CONTRACT_OWNER | Balance in contract |
+| verifyPrice | VIEW | ANYONE | Returns price for order from Blockchain |
 
 * Buyers
 
 | METHOD | TYPE | ACCESS |  DESCRIPTION |
-| ------ | ------ | ------ |
+| ------ | ------ | ------ | ------ |
 | makeOrder | PAYABLE | ANYONE | Set order that must be done |
-| getBuyerOrderList | VIEW | ANYONE | Returns list of orders that is on the go for `msg.sender` |
+| getBuyerOrderList | VIEW | ANYONE | Returns list of orders that is on the go |
 | checkOrderStatus | VIEW | ORDER_OWNER | Check status of work by IPFS hash |
 | getOrderWorkResult | VIEW | ORDER_OWNER | Owner can get result of order |
 | markOrderAsVerify | TRANSACT | ORDER_OWNER | Mark order as done |
@@ -33,17 +34,17 @@ Contract is deployed to Ropsten testnet with Parity
 * Content Writers
 
 | METHOD | TYPE | ACCESS |  DESCRIPTION |
-| ------ | ------ | ------ |
+| ------ | ------ | ------ | ------ |
 | takeOrder | TRANSACT | ANYONE | Take order and start work on it |
-| getContentWriterJobList | VIEW | ANYONE | Returns list of orders that must be done from `msg.sender` |
+| getContentWriterJobList | VIEW | ANYONE | Returns list of orders that must be done |
 | submitWork | TRANSACT | ORDER_WORKER | Submit work for review |
 | checkWorkStatus | VIEW | ORDER_WORKER | Check if he get paid for work |
 
-## Eleemnt from order lsit
+## Element from order list
 ```
 {
     "price"       : "0.01", //ETH
-    "description" : "Transalte this text to Spanish...",
+    "description" : "Translate this text to Spanish...",
     "owner"       : "0xfc55F9A54734E99D617f3c26677616C42Dc4a8Ad",
 }
 ```

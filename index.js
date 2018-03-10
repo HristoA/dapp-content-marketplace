@@ -28,6 +28,7 @@ ContentMarketplace.prototype.init = function(){
     var app   = express();
 
     twig.cache(false)
+
     app.set('view engine', 'twig');
     app.set('views', path.join(__dirname, 'views'));
     app.set('view cache', false);
@@ -36,10 +37,14 @@ ContentMarketplace.prototype.init = function(){
     app.use(bodyParser.urlencoded({ extended: false }))// Value can be string or array
     app.use(bodyParser.json()); //Support JSON encoded body
 
+
+    /**************
+     * HOME PAGE
+     *************/
     app.get('/', async function(req, res){
         var callPromise = $this.contract.getFreeOrdersList();
-        var orderListByte32;
-        var orderListForFE = [];
+        var orderListByte32 = [];
+        var orderListForFE  = [];
 
         await callPromise.then(function(result) {
             orderListByte32 = result;
@@ -50,29 +55,21 @@ ContentMarketplace.prototype.init = function(){
                     delete orderListByte32[key]
                 }
             })
+
+            $this.console("TEST", "11111111111111111");
         });
 
         /**
          * Caching resources
          */
-        if($this.orderList.length != orderListByte32.length) {
-
-            //Delete cache elements that no more exists
-            $this.orderList.forEach(function(item, key){
-                if(!$this.orderListByte32.some(function(hashByte32){ return hashByte32 === item.byte32Hash}) ){
-                    delete $this.orderList[key]
-                }
-            })
-
             if(Object.keys(orderListByte32).length == 0){
-                $this.console("HOME_PAGE", "Getting data IPFS: " + JSON.stringify($this.orderList));
-                res.render('index', { "orderList": $this.orderList});
+                res.render('index', { "orderList": orderListForFE});
             } else {
                 var itemsProcessed = 0;
 
                 orderListByte32.forEach(function (byte32Hash) {
                     //Check if NOT exist in cache
-                    if(!$this.orderList.some(function(item){ return item.name === byte32Hash})){
+                    if(!$this.orderList.some(function(item){ return item.byte32Hash === byte32Hash})){
 
                         var ipfsHash = $this.bytes32ToIPFSHash(byte32Hash);
 
@@ -82,27 +79,27 @@ ContentMarketplace.prototype.init = function(){
                         $this.ipfs.catJSON(ipfsHash, function (err, result) {
                             $this.console("IPFS", err + " | " + result);
 
-                            $this.orderList.push({
+                            orderListForFE.push({
                                 "byte32Hash": byte32Hash,
                                 "data"      : result
                             });
 
                             itemsProcessed++;
 
-                            if (itemsProcessed == orderListByte32.length) {
-                                $this.console("HOME_PAGE", "Getting data IPFS: " + JSON.stringify($this.orderList));
-                                res.render('index', { "orderList": $this.orderList});
+                            if (itemsProcessed == Object.keys(orderListByte32).length) {
+                                res.render('index', { "orderList": orderListForFE});
                             }
                         })
                     }
                 })
             }
-        } else {
-            $this.console("HOME_PAGE", "Getting data from cache: " + JSON.stringify($this.orderList));
-            res.render('index', { "orderList": $this.orderList});
-        }
     });
 
+
+
+    /******************
+     * MAKE NEW ORDER
+     *****************/
     app.get('/make-order', function(req, res){
         res.render('make-order', {});
     });
@@ -129,6 +126,138 @@ ContentMarketplace.prototype.init = function(){
                 "ipfsHash": byte32Hash,
             })
         });
+    });
+
+
+    /***************************
+     * CHECK ORDER LIST OF OWN *
+     **************************/
+    app.get('/my-orders/:address',  async function(req, res){
+        var userAdddr       = req.params['address'];
+        var responseList    = [];
+        var callPromise     = $this.contract.getBuyerOrderList(userAdddr);
+        var myOrdersListByte32;
+
+        $this.console("MY_ORDERS", userAdddr)
+
+        await callPromise.then(function(result) {
+            myOrdersListByte32 = result;
+
+            myOrdersListByte32.forEach(function (elementValue, key) {
+                //Remove deleted elements
+                if (elementValue == "0x0000000000000000000000000000000000000000000000000000000000000000") {
+                    delete myOrdersListByte32[key]
+                }
+            })
+        });
+
+        $this.console("MY_ORDERS", myOrdersListByte32)
+
+
+        if(Object.keys(myOrdersListByte32).length == 0){
+            res.render('my-orders', { "myOrderList" : responseList });
+        } else {
+            var itemsProcessed = 0;
+
+            myOrdersListByte32.forEach(function (byte32Hash) {
+                //Check if NOT exist in cache
+
+                    var ipfsHash = $this.bytes32ToIPFSHash(byte32Hash);
+
+                    $this.console("BYTE32_HASH", byte32Hash);
+                    $this.console("IPFS_HASH", ipfsHash);
+
+                    $this.ipfs.catJSON(ipfsHash, function (err, result) {
+                        $this.console("IPFS", err + " | " + result);
+
+                        responseList.push({
+                            "byte32Hash": byte32Hash,
+                            "data"      : result
+                        });
+
+                        itemsProcessed++;
+
+                        if (itemsProcessed == Object.keys(myOrdersListByte32).length) {
+                            res.render('my-orders', { "myOrderList" : responseList });
+                        }
+                    })
+            })
+        }
+    });
+
+    /**
+     * Get Work from hash
+     */
+    app.post('/get-order-work-result', function(req, res){
+        var workHash = this.bytes32ToIPFSHash(req.body.workHash)
+
+        $this.console("GET_ORDER_WORK_RESULT",  workHash)
+
+        $this.ipfs.catJSON(workHash, function(err, result) {
+
+            res.status(200).send({
+                "status": "success",
+                "message": "Done...",
+                "work" : result.description,
+            })
+        });
+    });
+
+
+    /***************************
+     * CHECK ORDER LIST OF OWN *
+     **************************/
+    app.get('/taken-orders/:address',  async function(req, res){
+        var userAdddr       = req.params['address'];
+        var responseList    = [];
+        var callPromise     = $this.contract.getContentWriterJobList(userAdddr);
+        var takenListByte32;
+
+        $this.console("TAKEN_WORK", userAdddr)
+
+        await callPromise.then(function(result) {
+            takenListByte32 = result;
+
+            takenListByte32.forEach(function (elementValue, key) {
+                //Remove deleted elements
+                if (elementValue == "0x0000000000000000000000000000000000000000000000000000000000000000") {
+                    delete takenListByte32[key]
+                }
+            })
+        });
+
+        $this.console("TAKEN_WORK", takenListByte32)
+
+
+        if(Object.keys(takenListByte32).length == 0){
+            res.render('taken-orders', { "takenOrderList" : responseList });
+        } else {
+            var itemsProcessed = 0;
+
+            takenListByte32.forEach(function (byte32Hash) {
+                //Check if NOT exist in cache
+
+                var ipfsHash = $this.bytes32ToIPFSHash(byte32Hash);
+
+                $this.console("BYTE32_HASH", byte32Hash);
+                $this.console("IPFS_HASH", ipfsHash);
+
+                $this.ipfs.catJSON(ipfsHash, function (err, result) {
+                    $this.console("IPFS", err + " | " + result);
+
+                    responseList.push({
+                        "byte32Hash": byte32Hash,
+                        "data"      : result
+                    });
+
+                    itemsProcessed++;
+
+                    if (itemsProcessed == Object.keys(takenListByte32).length) {
+                        res.render('taken-orders', { "takenOrderList" : responseList });
+                    }
+                })
+            })
+        }
     });
 
    /* app.get('/category/all', async function (req, res) {

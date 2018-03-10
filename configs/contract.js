@@ -1,10 +1,3 @@
-function getAddress() {
-    return "0xb7509e9e03d7607c074ae26240e7f92699a3ceea";
-}
-
-function getOwner() {
-    return "0xfc55F9A54734E99D617f3c26677616C42Dc4a8Ad";
-}
 function getABI() {
     return [
         {
@@ -42,20 +35,6 @@ function getABI() {
         },
         {
             "constant": true,
-            "inputs": [],
-            "name": "getContentWriterJobList",
-            "outputs": [
-                {
-                    "name": "",
-                    "type": "bytes32[]"
-                }
-            ],
-            "payable": false,
-            "stateMutability": "view",
-            "type": "function"
-        },
-        {
-            "constant": true,
             "inputs": [
                 {
                     "name": "orderIPFSHash",
@@ -74,6 +53,44 @@ function getABI() {
             "type": "function"
         },
         {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "buyerAddress",
+                    "type": "address"
+                }
+            ],
+            "name": "getBuyerOrderList",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes32[]"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "constant": true,
+            "inputs": [
+                {
+                    "name": "orderIPFSHash",
+                    "type": "bytes32"
+                }
+            ],
+            "name": "verifyPrice",
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
             "constant": false,
             "inputs": [
                 {
@@ -82,15 +99,25 @@ function getABI() {
                 }
             ],
             "name": "takeOrder",
-            "outputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
             "payable": false,
             "stateMutability": "nonpayable",
             "type": "function"
         },
         {
             "constant": true,
-            "inputs": [],
-            "name": "getBuyerOrderList",
+            "inputs": [
+                {
+                    "name": "contentWriterAddr",
+                    "type": "address"
+                }
+            ],
+            "name": "getContentWriterJobList",
             "outputs": [
                 {
                     "name": "",
@@ -204,6 +231,14 @@ function getABI() {
             "type": "event"
         }
     ];
+}
+
+function getAddress() {
+    return "0x3b8a65c5e784e8422d3670d859ba348f11fde1af";
+}
+
+function getOwner() {
+    return "0xfc55F9A54734E99D617f3c26677616C42Dc4a8Ad";
 }
 
 module.exports = { getOwner, getABI, getAddress};
