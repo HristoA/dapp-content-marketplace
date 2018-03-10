@@ -289,6 +289,8 @@
      ***********/
     //Verify price from blockchain
     $(".verifyPrice").on("click", function(e){
+        $("#dapp-main-conteiner").addClass("blur-on-load");
+
         var elementThis = $(this);
         var hash        = elementThis.closest(".orderList").attr("data-hash")
 
@@ -304,6 +306,8 @@
                 $("#message").html("Ethereum error: " + err).show();
                 setTimeout(removeMessage(), 4000)
             }
+
+            $("#dapp-main-conteiner").removeClass("blur-on-load");
         })
     })
 
@@ -327,6 +331,7 @@
                     $("#message").html("Unlock your Metamask...").removeClass('text-success').addClass("text-warning").show();
                 } else {
                     $("#message").html("Processing...").removeClass('text-warning').addClass("text-success").show();
+                    $("#dapp-main-conteiner").addClass("blur-on-load");
 
                     $.ajax({
                         url: "/make-order",
@@ -352,14 +357,17 @@
                                         $("#message").html("Ethereum error: " + err).show();
                                         setTimeout(removeMessage(), 4000)
                                     }
+                                    $("#dapp-main-conteiner").removeClass("blur-on-load");
                                 })
                             } else {
                                 $("#message").html(data.message).removeClass('text-success').addClass("text-warning").show();
                                 setTimeout(removeMessage(), 4000)
+                                $("#dapp-main-conteiner").removeClass("blur-on-load");
                             }
                         },
                         error: function (data) {
                             console.log(data);
+                            $("#dapp-main-conteiner").removeClass("blur-on-load");
                         }
                     });
                 }
@@ -369,6 +377,7 @@
 
     $("#takeOrder").on("click", function(e){
         e.preventDefault();
+        $("#dapp-main-conteiner").addClass("blur-on-load");
 
         var hash =  $("#takeOrder").attr("data-hash")
 
@@ -381,11 +390,26 @@
                 $("#message").html("Successfully taken!").addClass("text-success").show();
                 $("div").find("[data-hash='" + hash + "']").hide();
 
+                //Mark it in DApp server
+                $.ajax({
+                    url: "/take-this-order",
+                    type: "POST",
+                    contentType: 'application/json',
+                    data: JSON.stringify({"orderHash" : hash}),
+                    success: function (data) {
+                        console.log("Mark Order in DApp server");
+                    }
+                });
+
+
                 setTimeout(removeMessage(), 4000);
             } else {
                 $("#message").html("Ethereum error: " + err).show();
                 setTimeout(removeMessage(), 4000)
             }
+
+            $("#dapp-main-conteiner").removeClass("blur-on-load");
+
         })
     });
 
@@ -394,6 +418,8 @@
      * MY ORDERS *
      *************/
     $(".statusCheck").on("click", function(e){
+        $("#dapp-main-conteiner").addClass("blur-on-load");
+
         var elementThis = $(this);
         var hash        = elementThis.closest(".myOrderList").attr("data-hash")
 
@@ -409,19 +435,21 @@
                 $("#message").html("Ethereum error: " + err).show();
                 setTimeout(removeMessage(), 4000)
             }
+
+            $("#dapp-main-conteiner").removeClass("blur-on-load");
         })
     })
 
     $(".returnWork").on("click", function(e){
+        $("#dapp-main-conteiner").addClass("blur-on-load");
+
         var elementThis = $(this);
         var hash        = elementThis.closest(".myOrderList").attr("data-hash")
 
         console.log(hash);
         $this.ContractInstance.getOrderWorkResult(hash, function (err, result) {
             console.log(err, result);
-
             if (err == null) {
-
                 if(result != "0x0000000000000000000000000000000000000000000000000000000000000000")
                 {
                     var inputData = {};
@@ -440,7 +468,7 @@
                     });
                 }
 
-                elementThis.closest("div").html( "There are no submit work yet ");
+                elementThis.closest("div").html("There are no submit work yet");
                 console.log(elementThis)
                 console.log(result);
 
@@ -448,11 +476,15 @@
                 $("#message").html("Ethereum error: " + err).show();
                 setTimeout(removeMessage(), 4000)
             }
+
+            $("#dapp-main-conteiner").removeClass("blur-on-load");
         })
     })
 
     //Mark Order as verify and pay to Content Writer
     $(".verifyOrder").on("click", function(e){
+        $("#dapp-main-conteiner").addClass("blur-on-load");
+
         var elementThis = $(this);
         var hash        = elementThis.closest(".myOrderList").attr("data-hash")
 
@@ -468,6 +500,9 @@
                 $("#message").html("Ethereum error: " + err).show();
                 setTimeout(removeMessage(), 4000)
             }
+
+            $("#dapp-main-conteiner").removeClass("blur-on-load");
+
         })
     })
 
@@ -483,6 +518,7 @@
     });
 
     function removeMessage(){
+        $("#dapp-main-conteiner").removeClass("blur-on-load");
         $("#message").removeClass('text-success').removeClass("text-warning").html("").hide();
     }
 })(jQuery);

@@ -19,6 +19,7 @@ class ContentMarketplace {
         this.provider   = ethers.providers.getDefaultProvider('ropsten');
         this.contract   = new ethers.Contract(ContractConfig.getAddress(), ContractConfig.getABI(), this.provider);
         this.orderList  = [];//Used for caching
+        this.orderTaken = [];//Used for preventing double taking of order
         this.init();
     }
 }
@@ -28,7 +29,6 @@ ContentMarketplace.prototype.init = function(){
     var app   = express();
 
     twig.cache(false)
-
     app.set('view engine', 'twig');
     app.set('views', path.join(__dirname, 'views'));
     app.set('view cache', false);
@@ -42,60 +42,68 @@ ContentMarketplace.prototype.init = function(){
      * HOME PAGE
      *************/
     app.get('/', async function(req, res){
-        var callPromise = $this.contract.getFreeOrdersList();
+        var callPromise     = $this.contract.getFreeOrdersList();
         var orderListByte32 = [];
-        var orderListForFE  = [];
 
         await callPromise.then(function(result) {
             orderListByte32 = result;
-
             orderListByte32.forEach(function(elementValue, key){
                 //Remove deleted elements
                 if(elementValue == "0x0000000000000000000000000000000000000000000000000000000000000000"){
                     delete orderListByte32[key]
                 }
             })
-
-            $this.console("TEST", "11111111111111111");
         });
 
         /**
          * Caching resources
          */
-            if(Object.keys(orderListByte32).length == 0){
-                res.render('index', { "orderList": orderListForFE});
+        if(Object.keys(orderListByte32).length != Object.keys($this.orderList).length){
+
+            if (Object.keys(orderListByte32).length == 0) {
+                res.render('index', {"orderList": $this.orderList});
             } else {
-                var itemsProcessed = 0;
+                var itemsProcessed  = 0;
+                $this.orderList     = [];
+                $this.orderTaken    = [];
 
                 orderListByte32.forEach(function (byte32Hash) {
-                    //Check if NOT exist in cache
-                    if(!$this.orderList.some(function(item){ return item.byte32Hash === byte32Hash})){
+                    var ipfsHash = $this.bytes32ToIPFSHash(byte32Hash);
 
-                        var ipfsHash = $this.bytes32ToIPFSHash(byte32Hash);
+                    $this.console("BYTE32_HASH", byte32Hash);
+                    $this.console("IPFS_HASH", ipfsHash);
 
-                        $this.console("BYTE32_HASH", byte32Hash);
-                        $this.console("IPFS_HASH", ipfsHash);
+                    $this.ipfs.catJSON(ipfsHash, function (err, result) {
+                        $this.console("IPFS", err + " | " + result);
 
-                        $this.ipfs.catJSON(ipfsHash, function (err, result) {
-                            $this.console("IPFS", err + " | " + result);
+                        itemsProcessed++;
 
-                            orderListForFE.push({
-                                "byte32Hash": byte32Hash,
-                                "data"      : result
-                            });
+                        $this.orderList.push({
+                            "byte32Hash": byte32Hash,
+                            "data": result
+                        });
 
-                            itemsProcessed++;
-
-                            if (itemsProcessed == Object.keys(orderListByte32).length) {
-                                res.render('index', { "orderList": orderListForFE});
-                            }
-                        })
-                    }
+                        if (itemsProcessed == Object.keys(orderListByte32).length) {
+                            res.render('index', {"orderList": $this.orderList});
+                        }
+                    })
                 })
             }
+        } else {
+            $this.console("HOME_PAGE", "Using cash.");
+
+            var clearedList =  $this.orderList;
+
+            //Remove orders that alread has been taken but is not already in smart contract
+            clearedList.forEach(function(orderHash, index) {
+                if ($this.orderTaken.indexOf(orderHash.byte32Hash) > -1) {
+                    clearedList.splice(index, 1);
+                }
+            })
+
+            res.render('index', {"orderList": clearedList});
+        }
     });
-
-
 
     /******************
      * MAKE NEW ORDER
@@ -258,6 +266,19 @@ ContentMarketplace.prototype.init = function(){
                 })
             })
         }
+    });
+
+
+
+    /**********************
+     *  PREVENT DOUBLE WORK TAKING *
+     *********************/
+    app.post('/take-this-order', function(req, res){
+       var orderHash = req.body.orderHash
+
+        $this.console("TAKE_THIS_ORDER",  orderHash)
+
+        $this.orderTaken.push(orderHash);
     });
 
    /* app.get('/category/all', async function (req, res) {

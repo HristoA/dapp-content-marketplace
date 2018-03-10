@@ -448,3 +448,8 @@ textarea.input100 {
   padding-bottom: 50px!important;
   padding-right: 10px!important;
 }
+
+.blur-on-load {
+  filter: blur(1px);
+  pointer-events: none;
+}
