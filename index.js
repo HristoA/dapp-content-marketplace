@@ -219,7 +219,8 @@ ContentMarketplace.prototype.init = function(){
     app.post('/get-order-work-result', async function(req, res){
         var workHash = $this.bytes32ToIPFSHash(req.body.workHash)
 
-        $this.console("GET_ORDER_WORK_RESULT",  workHash)
+        $this.console("GET_ORDER_WORK_RESULT_BYTE32", req.body.workHash)
+        $this.console("GET_ORDER_WORK_RESULT_IPFS",  workHash)
 
         $this.ipfs.cat(workHash, function(err, result) {
             $this.console("GET_ORDER_WORK_RESULT",  err + " " + result)

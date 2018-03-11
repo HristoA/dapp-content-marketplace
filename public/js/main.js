@@ -471,8 +471,7 @@
         $this.ContractInstance.getOrderWorkResult(hash, function (err, result) {
             console.log(err, result);
             if (err == null) {
-                if(result != "0x0000000000000000000000000000000000000000000000000000000000000000")
-                {
+                if(result != "0x0000000000000000000000000000000000000000000000000000000000000000" && result != "0x" ) {
                     var inputData = {};
                     inputData.workHash = result;
 
@@ -483,7 +482,7 @@
                         data: JSON.stringify(inputData),
                         success: function (data) {
                             var data = data;
-                            console.log("asdasasdasdas")
+
                             $this.ContractInstance.checkWorkStatus(hash, function (err, result) {
                                 console.log(err, result);
                                 if (err == null) {
@@ -544,6 +543,7 @@
 
         $this.ContractInstance.checkWorkStatus(hash, function (err, result) {
             console.log("ok")
+            console.log(result)
             if(result){
                 console.log("send")
                 $.ajax({

@@ -11,7 +11,8 @@ People that need "organic content" or need any job to be done that depends of ge
 
 All text information for order and also list of all orders is stored in IPFS network. The rest info is hold in ETH smart contract.
 
-Contract is deployed to Ropsten testnet with Parity
+Contract is deployed to Ropsten testnet with MetaMask
+* Smart Contract: [0x6a984d2907d09e6767f3b9f813af3ad92caee3c0](https://ropsten.etherscan.io/address/0x6a984d2907d09e6767f3b9f813af3ad92caee3c0)
 ## Smart contract
 * General
 
