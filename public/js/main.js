@@ -286,7 +286,7 @@
             }
         ])
 
-        $this.ContractInstance = ContentMarketplace.at("0xeb2b17aad1a4465561c6bfbc081b3c77e491d0df")
+        $this.ContractInstance = ContentMarketplace.at("0x6a984d2907d09e6767f3b9f813af3ad92caee3c0")
 
         $this.ContractInstance.getBalanceOfContract(function(error, result){
             if(!error)
@@ -482,11 +482,38 @@
                         contentType: 'application/json',
                         data: JSON.stringify(inputData),
                         success: function (data) {
-                            elementThis.closest("div").html( data.work );
-                            console.log(elementThis)
-                            console.log(result);
+                            var data = data;
+                            console.log("asdasasdasdas")
+                            $this.ContractInstance.checkWorkStatus(hash, function (err, result) {
+                                console.log(err, result);
+                                if (err == null) {
+                                    console.log("checkWorkStatus", result)
+                                    //If is payed will show hole content
+                                    if(result){
+                                        elementThis.closest("div").html( data.work );
+                                        console.log(elementThis)
+                                        console.log(result);
+                                    } else {
 
-                            $("#dapp-main-conteiner").removeClass("blur-on-load");
+                                        var splited = data.work.split(".");
+                                        splited.map(function(currElement, index){
+                                            if(index % 2) {
+                                                splited[index] = " (---Will recive this sentence when mark as verified order---) ";
+                                            }
+                                        })
+
+                                        elementThis.closest("div").html( splited.join() );
+                                    }
+
+
+                                    $("#dapp-main-conteiner").removeClass("blur-on-load");
+                                } else {
+                                    $("#message").html("Ethereum error: " + err).show();
+                                    setTimeout(removeMessage(), 4000)
+                                }
+                            });
+
+
                         },
                         error: function(){
                             $("#dapp-main-conteiner").removeClass("blur-on-load");
@@ -499,7 +526,6 @@
                 
                 console.log(elementThis)
                 console.log(result);
-
             } else {
                 $("#message").html("Ethereum error: " + err).show();
                 setTimeout(removeMessage(), 4000)
@@ -515,20 +541,50 @@
         var hash        = elementThis.closest(".myOrderList").attr("data-hash")
 
         console.log(hash);
-        $this.ContractInstance.markOrderAsVerify(hash, function (err, result) {
-            console.log(err, result);
 
-            if (err == null) {
-                elementThis.closest("div").html( "Thanks for verifying!");
-                console.log(elementThis)
-                console.log(result);
+        $this.ContractInstance.checkWorkStatus(hash, function (err, result) {
+            console.log("ok")
+            if(result){
+                console.log("send")
+                $.ajax({
+                    url: "/verify-order",
+                    type: "POST",
+                    contentType: 'application/json',
+                    data: JSON.stringify({"orderHash": hash}),
+                    success: function (data) {
+                        $("#message").html("Already Verified").addClass("text-warning").show();
+                        $("#dapp-main-conteiner").removeClass("blur-on-load");
+
+                        setTimeout(function(){
+                            location.reload();
+                        }, 2000);
+                    }
+                });
             } else {
-                $("#message").html("Ethereum error: " + err).show();
-                setTimeout(removeMessage(), 4000)
+                $this.ContractInstance.markOrderAsVerify(hash, function (err, result) {
+                    console.log(err, result);
+
+                    if (err == null) {
+
+                        $.ajax({
+                            url: "/verify-order",
+                            type: "POST",
+                            contentType: 'application/json',
+                            data: JSON.stringify({"orderHash": hash}),
+                            success: function (data) {
+                                elementThis.closest("div").html( "Thanks for verifying!");
+                            }
+                        });
+
+                    } else {
+                        $("#message").html("Ethereum error: " + err).show();
+                        setTimeout(removeMessage(), 4000)
+                    }
+
+                    $("#dapp-main-conteiner").removeClass("blur-on-load");
+
+                })
             }
-
-            $("#dapp-main-conteiner").removeClass("blur-on-load");
-
         })
     })
 

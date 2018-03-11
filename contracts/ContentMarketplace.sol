@@ -103,11 +103,16 @@ contract ContentMarketplace{
         Orders[orderIPFSHash].isPaid = true;
 
         //Delete finished jobs from list
-        for (uint x = 0; x < buyersOrderList[msg.sender].length; x += 1) {
-            if (orderIPFSHash == buyersOrderList[msg.sender][x]) {
-                delete buyersOrderList[msg.sender][x];
-            }
-        }
+        /* for (uint x = 0; x < buyersOrderList[msg.sender].length; x += 1) {
+             if (orderIPFSHash == buyersOrderList[msg.sender][x]) {
+                 delete buyersOrderList[msg.sender][x];
+             }
+         }*/
+    }
+
+
+    function checkWorkStatus(bytes32 orderIPFSHash) view public isOrderOwner(orderIPFSHash) returns(bool){
+        return Orders[orderIPFSHash].isPaid;
     }
 
     /**
@@ -149,10 +154,6 @@ contract ContentMarketplace{
 
     function verifyPrice(bytes32 orderIPFSHash) view public returns(uint256){
         return Orders[orderIPFSHash].price;
-    }
-
-    function checkWorkStatus(bytes32 orderIPFSHash) view public isOrderWriterOwner(orderIPFSHash) returns(bool){
-        return Orders[orderIPFSHash].isPaid;
     }
 
     /**

@@ -21,6 +21,7 @@ class ContentMarketplace {
         this.orderList  = [];//Used for caching
         this.orderTaken = [];//Used for preventing double taking of order
         this.orderCompleated = [];//Used for preventing double submit work
+        this.orderVerified   = [];//Prevent showing of "My Orders" that are verifyed and in process of mining
         this.init();
     }
 }
@@ -55,9 +56,6 @@ ContentMarketplace.prototype.init = function(){
                 }
             })
         });
-
-        $this.console("HOME_PAGE", Object.keys(orderListByte32).length );
-        $this.console("HOME_PAGE", Object.keys($this.orderList).length );
 
         /**
          * Caching resources
@@ -99,19 +97,14 @@ ContentMarketplace.prototype.init = function(){
             var clearedList     = $this.orderList;
             var itemsProcessed  = 0;
 
-            $this.console("HOME_PAGE_LENGTH", clearedList.length);
             //Remove orders that alread has been taken but is not already in smart contract
             $this.orderList.forEach(function(orderHash, index) {
                 if ($this.orderTaken.indexOf(orderHash.byte32Hash) > -1) {
                     clearedList.splice(index, 1);
-                    $this.console("HOME_PAGE", "-");
                 }
-                $this.console("HOME_PAGE", index);
-                $this.console("HOME_PAGE", "+");
                 itemsProcessed++;
 
                 if (itemsProcessed >= Object.keys(clearedList).length) {
-                    $this.console("HOME_PAGE_LENGTH", clearedList.length);
                     res.render('index', {"orderList": clearedList});
                 }
             })
@@ -178,30 +171,44 @@ ContentMarketplace.prototype.init = function(){
         if(Object.keys(myOrdersListByte32).length == 0){
             res.render('my-orders', { "myOrderList" : responseList });
         } else {
-            var itemsProcessed = 0;
+            $this.itemsProcessed = 0;
 
             myOrdersListByte32.forEach(function (byte32Hash) {
                 //Check if NOT exist in cache
+                var ipfsHash = $this.bytes32ToIPFSHash(byte32Hash);
 
-                    var ipfsHash = $this.bytes32ToIPFSHash(byte32Hash);
+                $this.console("BYTE32_HASH", byte32Hash);
+                $this.console("IPFS_HASH", ipfsHash);
 
-                    $this.console("BYTE32_HASH", byte32Hash);
-                    $this.console("IPFS_HASH", ipfsHash);
+                $this.ipfs.catJSON(ipfsHash, function (err, result) {
+                    $this.console("IPFS", err + " | " + result);
 
-                    $this.ipfs.catJSON(ipfsHash, function (err, result) {
-                        $this.console("IPFS", err + " | " + result);
+                    responseList.push({
+                        "byte32Hash": byte32Hash,
+                        "data"      : result,
+                        "isVerified": false
+                    });
 
-                        responseList.push({
-                            "byte32Hash": byte32Hash,
-                            "data"      : result
-                        });
+                    $this.itemsProcessed++;
 
-                        itemsProcessed++;
+                    if ($this.itemsProcessed >= Object.keys(myOrdersListByte32).length) {
 
-                        if (itemsProcessed == Object.keys(myOrdersListByte32).length) {
-                            res.render('my-orders', { "myOrderList" : responseList });
-                        }
-                    })
+                        var itemsProcessed  = 0;
+                        var clearedList     = responseList;
+
+                        //Remove orders that alread has been taken but is not already in smart contract
+                        responseList.forEach(function(orderHash, index) {
+                            if ($this.orderVerified.indexOf(orderHash.byte32Hash) > -1) {
+                                clearedList[index].isVerified = true;
+                            }
+                            itemsProcessed++;
+
+                            if (itemsProcessed >= Object.keys(clearedList).length) {
+                                res.render('my-orders', { "myOrderList" : clearedList });
+                            }
+                        })
+                    }
+                })
             })
         }
     });
@@ -273,42 +280,17 @@ ContentMarketplace.prototype.init = function(){
                     $this.itemsProcessed++;
 
                     if ($this.itemsProcessed == Object.keys(takenListByte32).length) {
-                        var itemsProcessed = 0;
-
-                        /*
-                        var clearedResponse = responseList;
-
-                        responseList.forEach(function(orderHash, index) {
-                            if ($this.orderCompleated.indexOf(orderHash.byte32Hash) > -1) {
-                                clearedResponse.splice(index, 1);
-                                $this.console("GGGG", "-")
-                            }
-                            $this.console("GGGG", "+")
-                            itemsProcessed++;
-
-                            if (itemsProcessed >= Object.keys(responseList).length) {
-                                res.render('taken-orders', { "takenOrderList" : clearedResponse });
-                            }
-                        })*/
-
                         var itemsProcessed  = 0;
                         var clearedList     = responseList;
 
-                        $this.console("TAKEN_WORK_LENGTH", responseList.length);
-                        $this.console("TAKEN_WORK", $this.orderCompleated);
                         //Remove orders that alread has been taken but is not already in smart contract
                         responseList.forEach(function(orderHash, index) {
-                            $this.console("TAKEN_WORK", orderHash.byte32Hash);
                             if ($this.orderCompleated.indexOf(orderHash.byte32Hash) > -1) {
                                 clearedList.splice(index, 1);
-                                $this.console("TAKEN_WORK", "-");
                             }
-                            $this.console("TAKEN_WORK", index);
-                            $this.console("TAKEN_WORK", "+");
                             itemsProcessed++;
 
                             if (itemsProcessed >= Object.keys(clearedList).length) {
-                                $this.console("TAKEN_WORK_LENGTH", clearedList.length);
                                 res.render('taken-orders', { "takenOrderList" : clearedList });
                             }
                         })
@@ -346,6 +328,14 @@ ContentMarketplace.prototype.init = function(){
                 "workByte32Hash" : $this.ipfsHashToBytes32(result),
             })
         });
+    });
+
+    //Prevent My Orders list to show not mined already verifyed orders
+    app.post('/verify-order', function(req, res){
+        var orderHash   = req.body.orderHash
+        $this.console("VERIFY_ORDER",  orderHash)
+        $this.orderVerified.push( orderHash );
+        res.status(200).send();
     });
 
     app.listen(this.httpPort, function(){

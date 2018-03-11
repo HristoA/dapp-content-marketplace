@@ -253,7 +253,7 @@ function getABI() {
 }
 
 function getAddress() {
-    return "0xeb2b17aad1a4465561c6bfbc081b3c77e491d0df";
+    return "0x6a984d2907d09e6767f3b9f813af3ad92caee3c0";
 }
 
 function getOwner() {

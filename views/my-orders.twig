@@ -60,12 +60,14 @@
                              {{ item.data.description }}
                         </div>
 
-                        <div class="col-md-1">
-                            <span>Status:</span>
-                        </div>
-                        <div class="col-md-11" >
-                            <a href="#" class="statusCheck">Check</a>
-                        </div>
+                        {% if item.isVerified == false %}
+                            <div class="col-md-1">
+                                <span>Status:</span>
+                            </div>
+                            <div class="col-md-11" >
+                                <a href="#" class="statusCheck">Check</a>
+                            </div>
+                        {% endif %}
 
                         <div class="col-md-1">
                             <span>Work:</span>
@@ -74,13 +76,14 @@
                             <a href="#" class="returnWork" >Get Content Writer work</a>
                         </div>
 
-                        <div class="col-md-1">
-                            <span>Verify:</span>
-                        </div>
-                        <div class="col-md-11">
-                            <a href="#" class="verifyOrder">Yes? *(will no longer see it anywhere. So please save work in your PC)</a>
-                        </div>
-
+                        {% if item.isVerified == false %}
+                            <div class="col-md-1">
+                                <span>Verify:</span>
+                            </div>
+                            <div class="col-md-11">
+                                <a href="#" class="verifyOrder">Yes?</a>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
